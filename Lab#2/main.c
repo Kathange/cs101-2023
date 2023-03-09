@@ -9,11 +9,11 @@ typedef struct employee{
 }employee_t;
 void employee_info(employee_t my_emp){
 	printf("id: %d\n"
-		   "name: %s\n"
-		   "age: %d\n"
-		   "phone: %s\n"
-		   "salary: %f\n", 
-		   my_emp.em_id, my_emp.em_name, my_emp.em_age, my_emp.em_phone, my_emp.em_salary);
+		"name: %s\n"
+		"age: %d\n"
+		"phone: %s\n"
+		"salary: %f\n", 
+		my_emp.em_id, my_emp.em_name, my_emp.em_age, my_emp.em_phone, my_emp.em_salary);
 }
 int main(){
 	employee_t e;
@@ -21,7 +21,6 @@ int main(){
 	strcpy(e.em_name,"Kathy");
 	e.em_age=20;
 	strcpy(e.em_phone,"456789");
-	printf("%f",e.em_salary);
 	employee_info(e);
 	return 0;
 } 
