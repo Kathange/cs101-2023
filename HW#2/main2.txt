@@ -1,0 +1,15 @@
+01 #include <stdio.h>
+02 #include <string.h>
+03 
+04 int main(){
+05 	FILE *main2, *self;
+06 	main2 = fopen("main2.txt","w");
+07 	self = fopen("main2.c","r");
+08 	char c[48];
+09 	int i=1;
+10 	while((fgets(c,sizeof(c),self)) != NULL){
+11 		fprintf(main2,"%02d %s",i++,c);
+12 		memset(c,0,sizeof(c));
+13 	}
+14 	return 0;
+15 }
