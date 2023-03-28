@@ -2,18 +2,37 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-//¯S§O¸¹»P«e6­Ó¼Æ¦r¤£­«½Æ¥~¡A­n»P«e´X²Õªº¯S§O¸¹¤£­«½Æ¶Ü¡H
-int m,n[5][7], count=1,n1,n2,n3;
+
+int mm,n[5][7] ,count=1,num[3]={0},truncation;
+char lottoID[10];
 typedef struct{
 	int receipt_id;
 	int receipt_price;
 	char receipt_time[32];
 	int lotto_set[5][7];
 } lotto_record_t;
+lotto_record_t lrt1;
+
+void readID(){
+	FILE *id;
+	//find lotto id to int count 
+	sprintf(lottoID,"lotto[%05d].txt",count);
+	if((id=fopen(lottoID,"r")) == NULL)
+		return;
+	else{
+		while((id=fopen(lottoID,"r")) != NULL){
+			count++;
+			sprintf(lottoID,"lotto[%05d].txt",count);
+			fclose(id);
+		}
+	}
+	sprintf(lottoID,"lotto[%05d].txt",count-1);
+	fclose(id);
+}
 void buildLotto(){
 	int i,j,k;
 	int rd,b1,b2;
-	for(k=0;k<m;k++){
+	for(k=0;k<mm;k++){
 		b2=0;
 		for(i=0;i<7;i++){
 			rd=(i!=6)?rand()%69+1:rand()%9+1;
@@ -27,7 +46,7 @@ void buildLotto(){
 			}
 			if(i==6 && k>0){
 				b2=1;
-				for(j=0;j<m && (1<=n[j][6]&&n[j][6]<=10);j++){ 
+				for(j=0;j<mm && (1<=n[j][6]&&n[j][6]<=10);j++){ 
 					if(rd==n[j][6]){
 						i--;
 						b2=0;
@@ -52,7 +71,7 @@ void insert(int t,int i,int j){
 }
 void sort(){
 	int i,j;
-	for(i=0;i<m;i++)
+	for(i=0;i<mm;i++)
 		for(j=1;j<6;j++){
 			int t=n[i][j];
 			insert(t,i,j-1);
@@ -64,14 +83,15 @@ void printToFile(){
 	time_t t=time(0);
 	char *c=ctime(&t);
 	c[strlen(c)-1]=0;
-	
-	lot = fopen("lotto.txt","w+");
+	// generate lotto[00001], lotto[00002], ... file
+	sprintf(lottoID,"lotto[%05d].txt",count);
+	lot = fopen(lottoID,"w+");
 	fprintf(lot,"========= lotto649 =========\n");
 	fprintf(lot,"========+ No.%05d +========\n",count);
 	fprintf(lot,"= %s =",c);
 	for(i=1;i<=5;i++){
 		fprintf(lot,"\n[%d]: ",i);
-		if(i<=m)
+		if(i<=mm)
 			for(j=0;j<7;j++)
 				fprintf(lot,"%02d ",n[i-1][j]);
 		else
@@ -79,23 +99,143 @@ void printToFile(){
 				fprintf(lot,"-- ");
 	}
 	fprintf(lot,"\n========= csie@CGU =========");
+	fclose(lot);
 }
+void readLottoTXT(){
+	FILE *read;
+	int i,j,flag=0;
+	char c[32];
+	//read one of lotto[00001], lotto[00002], ..., and get value into struct
+	read = fopen(lottoID,"r");
+	while(fgets(c,sizeof(c),read) != NULL){
+		if(flag==0){
+			flag++;
+			continue;
+		}
+		else if(flag==1){
+			char temp[5];
+			for(i=0;c[i]!=0;i++)
+				if(c[i-1]=='.'){
+					for(j=0;j<5;j++,i++)
+						temp[j]=c[i];
+					lrt1.receipt_id=atoi(temp);
+					break;
+				}
+		}
+		else if(flag==2){
+			for(i=2,j=0;c[i]!='=';i++,j++)
+				lrt1.receipt_time[j]=c[i];
+		}
+		else if(3<=flag && flag<=7){
+			char temp[2];
+			int k=0;
+			if(c[5]!='-')
+				lrt1.receipt_price+=100;
+			for(i=5,j=0;c[i]!=0 && c[i]!='-';i++){
+				if(c[i]==' '){
+					k=0;
+					lrt1.lotto_set[flag-3][j++]=atoi(temp);
+					continue;
+				}
+				temp[k++]=c[i];
+			}
+		}
+		flag++;
+	}
+	fclose(read);
+}
+void writeRecord(){
+	FILE *record;
+	//write the struct value into record.bin
+	record = fopen("record.bin","ab+");
+	fwrite(&lrt1,sizeof(lotto_record_t),1,record);
+	fclose(record);
+}
+void checkWinNum(){
+	FILE *record;
+	int k=0;
+	//find win number and print to terminal
+	record=fopen("record.bin","rb");
+	if(record == NULL){
+		printf("\nçµæžœæ²’æœ‰äººè²·å½©åˆ¸qq\n");
+		return;
+	}
+	while(fread(&lrt1,sizeof(lotto_record_t),1,record) != 0){
+		if(lrt1.receipt_id<=truncation){
+			continue;
+		}
+		int i,j,win[5]={0},data=lrt1.receipt_price/100;
+		for(i=0;i<data;i++)
+			for(j=0;j<7;j++)
+				if(lrt1.lotto_set[i][j]==num[0] || lrt1.lotto_set[i][j]==num[1] || lrt1.lotto_set[i][j]==num[2])
+					win[i]=1;
+		if(win[0]==1 || win[1]==1 || win[2]==1 || win[3]==1 || win[4]==1){
+			printf("å½©åˆ¸ NO. %d\n",lrt1.receipt_id);
+			printf("å”®å‡ºæ™‚é–“ï¼š%s\n",lrt1.receipt_time);
+			printf("è™Ÿç¢¼ï¼š");
+			
+			int cnt=0;
+			for(i=0;i<data;i++)
+				if(win[i]==1){
+					if(cnt!=0)
+						printf("      ");
+					for(j=0;j<7;j++)
+						printf("%02d ",lrt1.lotto_set[i][j]);
+					cnt++;
+					printf("\n");
+				}
+		}
+	}
+	fclose(record);
+}
+void readTruncation(){
+	FILE *tru;
+	//read a truncation to know the record of check win number
+	if((tru=fopen("truncation.bin","rb")) == NULL){
+		truncation=0;
+		return;
+	}
+	fread(&truncation,sizeof(int),1,tru);
+	fclose(tru);
+}
+void changeTruncation(){
+	FILE *tru;
+	//write down the truncation to remember the record of check win number
+	tru=fopen("truncation.bin","wb+");
+	fwrite(&lrt1.receipt_id,sizeof(int),1,tru);
+	fclose(tru);
+}
+
 int main(){
 	srand(time(0));
-	printf("Åwªï¥úÁ{ªø©°¼Ö³z±mÁÊ¶R¾÷¥x\n"
-		   "½Ð°Ý±z­n¶R´X²Õ¼Ö³z±m¡G");
-	scanf("%d",&m);
-	/*
-	if(m==0)
-		¨ç¦¡; 
-	printf("½Ð¿é¤J¤¤¼ú¸¹½X(³Ì¦h¤T­Ó)¡G");
-	scanf("%d%d%d",&n1,&n2,&n3);
-	printf("¿é¤J¤¤¼ú¸¹½X¬°¡G%02d %02d %02d",n1,n2,n3);
-	printf("¥H¤U¬°¤¤¼ú±m¨é¡G");
-	*/
+	printf("æ­¡è¿Žå…‰è‡¨é•·åºšæ¨‚é€å½©è³¼è²·æ©Ÿå°\n"
+		   "è«‹å•æ‚¨è¦è²·å¹¾çµ„æ¨‚é€å½©ï¼š");
+	scanf("%d",&mm);
 	
-	buildLotto();
-	sort();
-	printToFile();
+	if(mm==0){
+		printf("è«‹è¼¸å…¥ä¸­çŽè™Ÿç¢¼(æœ€å¤šä¸‰å€‹)ï¼š");
+		int n1,i=0;
+		while(scanf("%d",&n1)){
+			num[i++]=n1;
+			if(getchar()=='\n')	break;
+		}
+		printf("è¼¸å…¥ä¸­çŽè™Ÿç¢¼ç‚ºï¼š");
+		for(i=0;1<=num[i] && num[i]<=69;i++)
+			printf("%02d ",num[i]);
+		printf("\nä»¥ä¸‹ç‚ºä¸­çŽå½©åˆ¸ï¼š\n");
+		readTruncation();
+		checkWinNum();
+		changeTruncation();
+	} 
+	else{
+		readID();
+		printf("å·²ç‚ºæ‚¨è³¼è²·çš„ %d çµ„æ¨‚é€çµ„åˆè¼¸å‡ºè‡³ lotto[%05d].txt\n",mm,count);
+		
+		buildLotto();
+		sort();
+		printToFile();
+		readLottoTXT();
+		writeRecord();
+	}
 	return 0;
 }
