@@ -15,7 +15,7 @@ void hanoi(int n,char A,char B,char C, FILE *han){
 	}
 }
 int main(){
-	int n=3;
+	int n=20;
 	FILE *han;
 	han = fopen("hanoi.txt","w+");
 	hanoi(n,'A','B','C', han);
