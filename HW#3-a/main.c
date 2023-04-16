@@ -1,26 +1,25 @@
 #include <stdio.h>
 #include <time.h>
-#include <string.h>
-void hanoi(int n,char A,char B,char C, FILE *han,int cnt){
-	cnt++;
+int cnt=0;
+void hanoi(int n,char A,char B,char C, FILE *han){
 	if(n>0){
-		hanoi(n-1,A,C,B, han,cnt+1);
+		hanoi(n-1,A,C,B, han);
 		
-		time_t t=time(0);
-		char *c=ctime(&t);
-		c[strlen(c)-1]=0;
-		fprintf(han,"%d (%s) : %dP from %c to %c\n",cnt,c,n,A,C);
+		time_t t= time(0);
+		struct tm *ts= localtime(&t);
+		char cc[24];
+		strftime(cc,sizeof(cc),"%Y %m%d %H:%M:%S",ts);
+		fprintf(han,"%d (%s) : %dP from %c to %c\n",++cnt,cc,n,A,C);
 		
-		hanoi(n-1,B,A,C, han,cnt+1);
+		hanoi(n-1,B,A,C, han);
 	}
 }
 int main(){
-	int n=3,cnt=0;
+	int n=3;
 	FILE *han;
 	han = fopen("hanoi.txt","w+");
-	
-	hanoi(n,'A','B','C', han,cnt);
+	hanoi(n,'A','B','C', han);
+	fclose(han);
 	return 0;
 }
 //搬2^n次 
-//未完成
